@@ -10,9 +10,10 @@
   :version "0.1"
   :components (
                (:file "package-hh-aws")
-               (:file "constants" :depends-on ("package-hh-aws"))
-               (:file "conditions" :depends-on ("package-hh-aws"))
-               (:file "xml" :depends-on ("package-hh-aws"))
+	       (:file "utils" :depends-on ("package-hh-aws"))
+               (:file "constants" :depends-on ("package-hh-aws" "utils"))
+               (:file "conditions" :depends-on ("package-hh-aws" "utils"))
+               (:file "xml" :depends-on ("package-hh-aws" "utils"))
                (:file "common" :depends-on ("constants" "conditions" "xml"))
                (:file "simpledb" :depends-on ("common"))
                (:file "s3" :depends-on ("common"))
@@ -28,7 +29,6 @@
 	       "s-xml"
                
 	       ;; local packages
-	       "hh-utils"
 	       )
   )
 

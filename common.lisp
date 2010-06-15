@@ -2,8 +2,6 @@
 
 (in-package :hh-aws)
 
-(use-package :hh-utils)
-
 (export
  (list
   
@@ -68,7 +66,7 @@
     (string-trim 
      '(#\Space #\Newline #\Tab)
      (with-open-file 
-         (is (merge-pathnames ".aws/access-key-id" (hh-utils:home-dir)))
+         (is (merge-pathnames ".aws/access-key-id" (home-dir)))
        (read-line is)
        )
      )
@@ -90,7 +88,7 @@
     (string-trim 
      '(#\Space #\Newline #\Tab)
      (with-open-file 
-         (is (merge-pathnames ".aws/secret-key" (hh-utils:home-dir)))
+         (is (merge-pathnames ".aws/secret-key" (home-dir)))
        (read-line is)
        )
      )
