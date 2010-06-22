@@ -195,3 +195,8 @@
   "
   (ensure-string-ends-with (sb-ext:posix-getenv "HOME") "/")
   )
+
+;; Console helpers
+(defmacro cout (&rest args)
+  `(format *standard-output* ,@args)
+  )

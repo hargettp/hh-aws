@@ -20,6 +20,23 @@
 
 (in-package :hh-aws)
 
+(export 
+ (list
+
+  'aws-error
+  'invalid-client-token-id-error
+  'service-unavailable-error
+  'no-such-domain-error
+  'signature-does-not-match-error
+  'invalid-query-expression-error
+  'no-such-bucket-error
+  'no-such-key-error
+  'bad-digest-error
+  'bucket-not-empty-error
+
+  )
+ )
+
 (define-condition aws-error (error)
   (
    (code
@@ -45,35 +62,39 @@
    )
   )
 
-(define-condition invalid-client-token-id (aws-error)
+(define-condition invalid-client-token-id-error (aws-error)
   ()
   )
 
-(define-condition service-unavailable (aws-error)
+(define-condition service-unavailable-error (aws-error)
   ()
   )
 
-(define-condition no-such-domain (aws-error)
+(define-condition no-such-domain-error (aws-error)
   ()
   )
 
-(define-condition signature-does-not-match (aws-error)
+(define-condition signature-does-not-match-error (aws-error)
   ()
   )
 
-(define-condition invalid-query-expression (aws-error)
+(define-condition invalid-query-expression-error (aws-error)
   ()
   )
 
-(define-condition no-such-bucket (aws-error)
+(define-condition no-such-bucket-error (aws-error)
   ()
   )
 
-(define-condition bad-digest (aws-error)
+(define-condition no-such-key-error (aws-error)
   ()
   )
 
-(define-condition bucket-not-empty (aws-error)
+(define-condition bad-digest-error (aws-error)
+  ()
+  )
+
+(define-condition bucket-not-empty-error (aws-error)
   ()
   )
 
@@ -86,14 +107,15 @@
                 )
               )
      (let ( (condition-class 'aws-error) )
-       (condition-option "InvalidClientTokenId" invalid-client-token-id)
-       (condition-option "ServiceUnavailable" service-unavailable)
-       (condition-option "NoSuchDomain" no-such-domain)
-       (condition-option "SignatureDoesNotMatch" signature-does-not-match)
-       (condition-option "InvalidQueryExpression" invalid-query-expression)
-       (condition-option "NoSuchBucket" no-such-bucket)
-       (condition-option "BadDigest" bad-digest)
-       (condition-option "BucketNotEmpty" bucket-not-empty)
+       (condition-option "InvalidClientTokenId" invalid-client-token-id-error)
+       (condition-option "ServiceUnavailable" service-unavailable-error)
+       (condition-option "NoSuchDomain" no-such-domain-error)
+       (condition-option "SignatureDoesNotMatch" signature-does-not-match-error)
+       (condition-option "InvalidQueryExpression" invalid-query-expression-error)
+       (condition-option "NoSuchBucket" no-such-bucket-error)
+       (condition-option "NoSuchKey" no-such-key-error)
+       (condition-option "BadDigest" bad-digest-error)
+       (condition-option "BucketNotEmpty" bucket-not-empty-error)
        
        (error condition-class 
               :code ,code 
