@@ -147,7 +147,7 @@
           (call-next-method)
           )
   :text (
-         (if (path-p '("Key" "Contents"))(some-service some-request &optional parameters)
+         (if (path-p '("Key" "Contents"))
              (progn
                (putend text-string (current-of handler) )
                )
