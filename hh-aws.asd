@@ -33,7 +33,7 @@
                (:file "conditions" :depends-on ("package-hh-aws" "utils"))
                (:file "xml" :depends-on ("package-hh-aws" "utils"))
                (:file "common" :depends-on ("constants" "conditions" "xml"))
-               (:file "simpledb" :depends-on ("common"))
+               (:file "sdb" :depends-on ("common"))
                (:file "s3" :depends-on ("common"))
                (:file "sqs" :depends-on ("common"))
                (:file "ec2" :depends-on ("common"))
