@@ -191,7 +191,7 @@
                   "foo!"
                   )
     
-    (assert-error 'hh-aws::bucket-not-empty
+    (assert-error 'hh-aws::bucket-not-empty-error
                   (s3-delete-bucket bucket-name)
                   )
     
