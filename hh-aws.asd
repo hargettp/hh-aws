@@ -60,6 +60,7 @@
   :depends-on (
 	       ;; external packages
                "lisp-unit"
+	       "uuid"
 
 	       ;; local packages
 	       "hh-aws"

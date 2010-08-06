@@ -19,10 +19,18 @@
 ;; THE SOFTWARE.
 
 (defpackage :hh-aws-tests
-  (:use :cl :asdf :lisp-unit :hh-utils :hh-aws)
+  (:use :cl :asdf :lisp-unit :hh-aws)
    )
 
 (in-package :hh-aws-tests)
+
+(defun uuid-string ()
+  (string-trim '(#\Space #\NewLine #\Tab)
+                                     (with-output-to-string (os)
+                                       (print (uuid:make-v4-uuid) os)
+                                       )
+                                     )
+  )
 
 (define-test create-list-delete-domain-test
   (let ( 
@@ -34,7 +42,7 @@
                                               )
                          )
         )
-    (assert-true (string-ends-with new-domain-name ".unittest.codeplume.com"))
+    (assert-true (hh-aws::string-ends-with new-domain-name ".unittest.codeplume.com"))
     (assert-true (db-create-domain new-domain-name))
     (assert-true (member new-domain-name 
                          (db-list-domains) 
@@ -62,7 +70,7 @@
                      )
         (item-name-1 (uuid-string))
         )
-    (assert-true (string-ends-with domain-name ".unittest.codeplume.com"))
+    (assert-true (hh-aws::string-ends-with domain-name ".unittest.codeplume.com"))
     (assert-true (db-create-domain domain-name))
     
     (assert-true (db-put-attributes domain-name item-name-1
@@ -113,7 +121,7 @@
       )
     
     (let ( 
-          (item (car (db-select (format-string "select foo from `~a`" 
+          (item (car (db-select (hh-aws::format-string "select foo from `~a`" 
                                                domain-name)
                                 )
                      ) 
@@ -145,7 +153,7 @@
 (define-test create-delete-bucket-test
   (let ( 
         (bucket-name (hh-utils:detokenize (list
-                                           (format-string "~4,'0D" (random 1000))
+                                           (hh-aws::format-string "~4,'0D" (random 1000))
                                            "unittest"
                                            "codeplume-com" 
                                            ) "-"
@@ -162,7 +170,7 @@
 (define-test put-get-delete-bucket-object-test
   (let ( 
         (bucket-name (hh-utils:detokenize (list
-                                           (format-string "~4,'0D" (random 1000))
+                                           (hh-aws::format-string "~4,'0D" (random 1000))
                                            "unittest"
                                            "codeplume-com" 
                                            ) "-"
@@ -170,7 +178,7 @@
                      )
         (object-name (hh-utils:detokenize (list
                                            "object"
-                                           (format-string "~4,'0D" (random 1000))
+                                           (hh-aws::format-string "~4,'0D" (random 1000))
                                            ) "-"
                                           )
                      ) 
@@ -192,6 +200,11 @@
     (assert-true (s3-delete-bucket bucket-name))
     (assert-false (member bucket-name (s3-list-buckets) :test #'equal))
     )
+  )
+
+(define-test ec2-basics-test
+    (assert-true (ec2-list-regions))
+  (assert-true (ec2-list-availability-zones))
   )
 
 (run-tests)
