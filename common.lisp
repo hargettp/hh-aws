@@ -257,6 +257,16 @@
    )
   )
 
+(defclass ec2-request ()
+  (
+   (region
+    :initform nil
+    :initarg :region
+    :accessor region-for
+    )
+   )
+  )
+
 (defgeneric make-request (a-service a-request-type)
   (:documentation
     "Create a new request for the service
@@ -280,6 +290,9 @@
     )
   (:method ((some-request s3-request))
     'ironclad:sha1
+    )
+  (:method ((some-request ec2-request))
+    'ironclad:sha256
     )
   )
 
@@ -370,6 +383,16 @@
   (add-parameter some-request "Timestamp" (aws-timestamp))
   )
 
+(defmethod initialize-instance ((some-request ec2-request) &key )
+  (call-next-method)
+  (add-parameter some-request "Action" (default-action some-request))
+  (add-parameter some-request "AWSAccessKeyId" (access-key-id *credentials*))
+  (add-parameter some-request "SignatureMethod" "HmacSHA256")
+  (add-parameter some-request "SignatureVersion" "2")
+  (add-parameter some-request "Version" (version-of (service-of some-request)))
+  (add-parameter some-request "Timestamp" (aws-timestamp))
+  )
+
 (defmethod initialize-instance ((some-request s3-request) &key )
   (call-next-method)
   (add-header some-request "Date" (aws-date))
@@ -391,6 +414,13 @@
                      (bucket-for some-request)
                      (call-next-method) 
                      )
+      (call-next-method)
+      )  
+  )
+
+(defmethod endpoint-of ((some-request ec2-request))
+  (if (region-for some-request)
+      (region-for some-request)
       (call-next-method)
       )  
   )
@@ -455,10 +485,10 @@
                                )
                              )
                            )
-                          )
+	      )
             )
-     (detokenize joined-pairs "&")
-     )
+      (detokenize joined-pairs "&")
+      )
     )
   (:method ((some-request sqs-request))
     ( let* ( 
@@ -471,10 +501,26 @@
                                )
                              )
                            )
-                          )
+	      )
             )
-     (detokenize joined-pairs "&")
-     )
+      (detokenize joined-pairs "&")
+      )
+    )
+  (:method ((some-request ec2-request))
+    ( let* ( 
+            (sorted-parameters (sorted-parameters some-request))
+            (joined-pairs (map-name-value-pairs 
+                           sorted-parameters
+                           (lambda (n v) 
+                             (with-output-to-string (os)
+                               (format os "~a=~a" n (url-encode v))
+                               )
+                             )
+                           )
+	      )
+            )
+      (detokenize joined-pairs "&")
+      )
     )
   )
 
@@ -573,9 +619,9 @@
 
 (defgeneric request-string-to-sign (some-request)
   (:documentation
-    "String representation of request prepared for signing
+   "String representation of request prepared for signing
     "
-    )
+   )
   (:method ((some-request db-request))
     (format-string "~a~%~a~%~a~%~a"
                    (http-verb some-request)
@@ -592,7 +638,7 @@
                    (canonical-query-string some-request)
                    )
     )
-    (:method ((some-request s3-request))
+  (:method ((some-request s3-request))
     (if (has-amz-headers-p some-request)
         (format-string "~a~%~a~%~a~%~a~%~a~%~a"
                        (http-verb some-request)
@@ -610,6 +656,14 @@
                        (canonicalized-resource-of some-request)
                        )
         )
+    )
+  (:method ((some-request ec2-request))
+    (format-string "~a~%~a~%~a~%~a"
+                   (http-verb some-request)
+                   (http-host-header some-request)
+                   (uri-of some-request)
+                   (canonical-query-string some-request)
+                   )
     )
   )
 
@@ -653,6 +707,11 @@
           )
     )
   (:method ((some-request sqs-request))
+    (cons (cons "Signature" (request-signature some-request))
+          (sorted-parameters some-request)
+          )
+    )
+  (:method ((some-request ec2-request))
     (cons (cons "Signature" (request-signature some-request))
           (sorted-parameters some-request)
           )
@@ -875,7 +934,7 @@
 
 (defgeneric extract-result (some-service some-request some-response)
   (:documentation
-    "
+   "
     ")
   (:method (
             (some-service service) 
@@ -887,8 +946,8 @@
           )
       (if some-format
           (find-responses (response-body some-response) 
-                    some-format
-                    )
+			  some-format
+			  )
           (response-values some-response)
           )
       )
@@ -903,8 +962,8 @@
           )
       (if some-format
           (find-responses (response-body some-response) 
-                    some-format
-                    )
+			  some-format
+			  )
           (response-values some-response)
           )
       )
@@ -915,6 +974,22 @@
             some-response
             )
     (bytes-to-string (response-body some-response))
+    )
+  (:method (
+            (some-service service) 
+            (some-request ec2-request) 
+            some-response
+            ) 
+    (let ( 
+          (some-format (result-format some-request))
+          )
+      (if some-format
+          (find-responses (response-body some-response) 
+			  some-format
+			  )
+          (response-values some-response)
+          )
+      )
     )
   )
 

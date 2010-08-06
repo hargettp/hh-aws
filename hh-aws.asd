@@ -36,6 +36,7 @@
                (:file "simpledb" :depends-on ("common"))
                (:file "s3" :depends-on ("common"))
                (:file "sqs" :depends-on ("common"))
+               (:file "ec2" :depends-on ("common"))
 	       
                )
   :depends-on (

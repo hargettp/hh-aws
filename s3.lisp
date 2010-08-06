@@ -283,19 +283,6 @@
          (setf (bucket-object-for some-request) object-name)
          
 	 (call-next-method)
-         ;; (handler-bind 
-         ;;  (
-         ;;   (aws-error #'(lambda (e)
-         ;;                  (cout "Response is ~a~%"
-         ;;                        (bytes-to-string 
-         ;;                         (response-body (error-response e))
-         ;;                         )
-         ;;                        )
-         ;;                  ) 
-         ;;              )
-         ;;   )
-         ;;  (call-next-method)
-         ;;  )
          )
   :result (
            (response-body some-response)
@@ -319,19 +306,6 @@
          (setf (bucket-object-for some-request) object-name)
          
           (call-next-method)
-         ;; (handler-bind 
-         ;;  (
-         ;;   (aws-error #'(lambda (e)
-         ;;                  (cout "Response is ~a~%"
-         ;;                        (bytes-to-string 
-         ;;                         (response-body (error-response e))
-         ;;                         )
-         ;;                        )
-         ;;                  ) 
-         ;;              )
-         ;;   )
-         ;;  (call-next-method)
-         ;;  )
          )
   :result (
            t
