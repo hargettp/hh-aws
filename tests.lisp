@@ -80,6 +80,8 @@
                                       )
                                     )
                  )
+    ;; adding sleep to ensure AWS has time to get consistent, so that tests can  pass
+    (sleep 2.0)
     (let ( (attributes (db-get-attributes domain-name item-name-1)) )
       (assert-true (every (lambda (a)
                             (member a attributes :test #'equal)
@@ -138,6 +140,9 @@
       )
     
     (assert-true (db-delete-attributes domain-name item-name-1 ()))
+
+    ;; adding sleep to ensure AWS has time to get consistent, so that tests can  pass
+    (sleep 2.0)
     
     (assert-false (db-get-attributes domain-name item-name-1))
     

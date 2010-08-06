@@ -293,7 +293,7 @@
 
 (defxmlparser items-parser items-builder
   :enter (
-          (call-next-method)
+          (push (symbol-name name) *current-elements*)
           )
   :text (
          (if (path-p '("Name" "Item"))
@@ -335,7 +335,7 @@
                (setf (current-of handler) nil)
                )
              )
-         (call-next-method)
+          (pop *current-elements*)
          )
   :finish (
            (results-of handler)
