@@ -34,7 +34,7 @@
 
 (define-test create-list-delete-domain-test
   (let ( 
-        (new-domain-name (hh-utils:detokenize (list
+        (new-domain-name (hh-aws::detokenize (list
                                                (uuid-string)
                                                "unittest"
                                                "codeplume.com" 
@@ -61,7 +61,7 @@
 
 (define-test put-get-query-delete-attributes-test
   (let ( 
-        (domain-name (hh-utils:detokenize (list
+        (domain-name (hh-aws::detokenize (list
                                            (uuid-string)
                                            "unittest"
                                            "codeplume.com" 
@@ -152,7 +152,7 @@
 
 (define-test create-delete-bucket-test
   (let ( 
-        (bucket-name (hh-utils:detokenize (list
+        (bucket-name (hh-aws::detokenize (list
                                            (hh-aws::format-string "~4,'0D" (random 1000))
                                            "unittest"
                                            "codeplume-com" 
@@ -169,14 +169,14 @@
 
 (define-test put-get-delete-bucket-object-test
   (let ( 
-        (bucket-name (hh-utils:detokenize (list
+        (bucket-name (hh-aws::detokenize (list
                                            (hh-aws::format-string "~4,'0D" (random 1000))
                                            "unittest"
                                            "codeplume-com" 
                                            ) "-"
                                           )
                      )
-        (object-name (hh-utils:detokenize (list
+        (object-name (hh-aws::detokenize (list
                                            "object"
                                            (hh-aws::format-string "~4,'0D" (random 1000))
                                            ) "-"
