@@ -114,6 +114,23 @@
   :version ( 
             (string "2007-11-07") 
             )
+  :request (
+	    db-request
+	    :documentation "Base for requests targeting SimpleDB"
+	    :init (progn
+		    (add-parameter some-request "Action" (default-action some-request))
+		    (add-parameter some-request "AWSAccessKeyId" (access-key-id *credentials*))
+		    (add-parameter some-request "SignatureMethod" "HmacSHA256")
+		    (add-parameter some-request "SignatureVersion" "2")
+		    (add-parameter some-request "Version" (version-of (service-of some-request)))
+		    (add-parameter some-request "Timestamp" (aws-timestamp))
+		    )
+	    :signed-parameters (progn
+				 (cons (cons "Signature" (request-signature some-request))
+				       (sorted-parameters some-request)
+				       )
+				 )
+	    )
   )
 
 (defrequest db-list-domains

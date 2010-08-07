@@ -35,6 +35,25 @@
   )
  )
 
+(defgeneric content-md5-of (some-request)
+  )
+
+(defgeneric content-type-of (some-request)
+  )
+
+(defgeneric content-length-of (some-request)
+  )
+
+(defgeneric canonicalized-amz-headers-of (some-request)
+  (:documentation
+    "Return a canonical string representation of amz headers
+    "
+    )
+  )
+
+(defgeneric canonicalized-resource-of (some-request)
+  )
+
 (defservice s3
   :endpoint ( 
              (string "s3.amazonaws.com") 
@@ -42,7 +61,150 @@
   :version ( 
             (string "2006-03-01") 
             )
+  :request (
+	    s3-request
+	    :slots (
+		    (bucket
+		     :initform nil
+		     :initarg :bucket
+		     :accessor bucket-for
+		     )
+		    (bucket-object
+		     :initform nil
+		     :initarg :object
+		     :accessor bucket-object-for
+		     )
+		    (object-content
+		     :initform nil
+		     :initarg :content
+		     :accessor object-content-for
+		     )
+		    )
+	    :documentation "Base for requests targeting S3"
+	    :init (progn
+		    (add-header some-request "Date" (aws-date))
+		    )
+	    :endpoint (progn
+			(if (bucket-for some-request)
+			    (format-string "~a.~a"
+					   (bucket-for some-request)
+					   (call-next-method) 
+					   )
+			    (call-next-method)
+			    )  
+			)
+	    :uri (progn
+		   (if (bucket-object-for some-request)
+		       (format-string "https://~a/~a"
+				      (endpoint-of some-request)
+				      (bucket-object-for some-request)
+				      )
+		       (format-string "https://~a"
+				      (endpoint-of some-request)
+				      )
+		       )
+		   )
+	    :string (progn
+		      (if (has-amz-headers-p some-request)
+			  (format-string "~a~%~a~%~a~%~a~%~a~%~a"
+					 (http-verb some-request)
+					 (content-md5-of some-request)
+					 (content-type-of some-request)
+					 (date-header-of some-request)
+					 (canonicalized-amz-headers-of some-request)
+					 (canonicalized-resource-of some-request)
+					 )
+			  (format-string "~a~%~a~%~a~%~a~%~a"
+					 (http-verb some-request)
+					 (content-md5-of some-request)
+					 (content-type-of some-request)
+					 (date-header-of some-request)
+					 (canonicalized-resource-of some-request)
+					 )
+			  )
+		      )
+	    :digest ironclad:sha1
+	    :additional-headers (progn
+				  (let ( 
+					(authorization-header (cons "Authorization" 
+								    (format-string "AWS ~a:~a"
+										   (access-key-id *credentials*)
+										   (request-signature some-request)
+										   )
+								    )
+					  )
+					)
+				    (if (object-content-for some-request)
+					(append (list
+						 authorization-header
+						 (cons "Content-MD5" 
+						       (content-md5-of some-request)
+						       )
+						 )
+						(sorted-headers some-request)
+						)
+					(cons authorization-header
+					      (sorted-headers some-request)
+					      )
+					)
+				    )
+				  )
+	    :send (progn
+		    (http-request (http-uri some-request)
+				  :method (method-of some-request)
+				  :parameters (signed-parameters-of some-request)
+				  :additional-headers (additional-headers-of some-request)
+				  )
+		    )
+	    :result (progn
+		       (bytes-to-string (response-body some-response))
+		       )
+	    )
   )
+
+(defmethod content-md5-of ((some-request s3-request))
+  (if (object-content-for some-request)
+      (md5-digest (object-content-for some-request))
+      (string "")
+      )
+  )
+
+(defmethod content-type-of ((some-request s3-request))
+    (if (object-content-for some-request)
+        (string "text/plain")
+        (string "")
+        )
+    )
+
+(defmethod content-length-of ((some-request s3-request))
+    (if (object-content-for some-request)
+        (length (object-content-for some-request))
+        0
+        )
+    )
+
+(defmethod canonicalized-amz-headers-of ((some-request s3-request))
+    (with-output-to-string (os)
+      (dolist (header (sorted-headers some-request))
+        (if (string-starts-with (car header) "x-amz")
+            (format os "~a: ~a\n" (car header) (cdr header))
+            )
+        )
+      )
+    )
+
+(defmethod canonicalized-resource-of ((some-request s3-request))
+    (if (bucket-for some-request)
+        (if (bucket-object-for some-request)
+            (format-string "/~a/~a"
+                           (bucket-for some-request)
+                           (bucket-object-for some-request) 
+                           )
+            (format-string "/~a/" (bucket-for some-request))
+            )
+        "/"
+        )
+    )
 
 (defclass list-buckets-builder (builder)
   ()

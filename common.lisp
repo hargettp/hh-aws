@@ -217,56 +217,6 @@
    )
   )
 
-(defclass db-request ()
-  ()
-  (:documentation
-    "Base for requests targeting SimpleDB"
-    )
-  )
-
-(defclass s3-request ()
-  (
-   (bucket
-    :initform nil
-    :initarg :bucket
-    :accessor bucket-for
-    )
-   (bucket-object
-    :initform nil
-    :initarg :object
-    :accessor bucket-object-for
-    )
-   (object-content
-    :initform nil
-    :initarg :content
-    :accessor object-content-for
-    )
-   )
-  (:documentation
-    "Base for requests targeting S3"
-    )
-  )
-
-(defclass sqs-request ()
-  (
-   (queue-name
-    :initarg :queue
-    :initform nil
-    :accessor queue-for
-    )
-   )
-  )
-
-(defclass ec2-request ()
-  (
-   (region
-    :initform nil
-    :initarg :region
-    :accessor region-for
-    )
-   )
-  )
-
 (defgeneric make-request (a-service a-request-type)
   (:documentation
     "Create a new request for the service
@@ -286,12 +236,6 @@
     "
     )
   (:method ((some-request request))
-    'ironclad:sha256
-    )
-  (:method ((some-request s3-request))
-    'ironclad:sha1
-    )
-  (:method ((some-request ec2-request))
     'ironclad:sha256
     )
   )
@@ -314,7 +258,7 @@
     "Add a header (usually an amz header) to the request
     "
     )
-  (:method ((some-request s3-request) header-name header-value)
+  (:method ((some-request request) header-name header-value)
     (setf 
      (gethash header-name (headers-of some-request)) 
      header-value
@@ -363,41 +307,6 @@
     )
   )
 
-(defmethod initialize-instance ((some-request db-request) &key )
-  (call-next-method)
-  (add-parameter some-request "Action" (default-action some-request))
-  (add-parameter some-request "AWSAccessKeyId" (access-key-id *credentials*))
-  (add-parameter some-request "SignatureMethod" "HmacSHA256")
-  (add-parameter some-request "SignatureVersion" "2")
-  (add-parameter some-request "Version" (version-of (service-of some-request)))
-  (add-parameter some-request "Timestamp" (aws-timestamp))
-  )
-
-(defmethod initialize-instance ((some-request sqs-request) &key )
-  (call-next-method)
-  (add-parameter some-request "Action" (default-action some-request))
-  (add-parameter some-request "AWSAccessKeyId" (access-key-id *credentials*))
-  (add-parameter some-request "SignatureMethod" "HmacSHA256")
-  (add-parameter some-request "SignatureVersion" "2")
-  (add-parameter some-request "Version" (version-of (service-of some-request)))
-  (add-parameter some-request "Timestamp" (aws-timestamp))
-  )
-
-(defmethod initialize-instance ((some-request ec2-request) &key )
-  (call-next-method)
-  (add-parameter some-request "Action" (default-action some-request))
-  (add-parameter some-request "AWSAccessKeyId" (access-key-id *credentials*))
-  (add-parameter some-request "SignatureMethod" "HmacSHA256")
-  (add-parameter some-request "SignatureVersion" "2")
-  (add-parameter some-request "Version" (version-of (service-of some-request)))
-  (add-parameter some-request "Timestamp" (aws-timestamp))
-  )
-
-(defmethod initialize-instance ((some-request s3-request) &key )
-  (call-next-method)
-  (add-header some-request "Date" (aws-date))
- )
-
 (defgeneric method-of (some-request)
   (:method ((some-request request))
     :get
@@ -406,23 +315,6 @@
 
 (defmethod endpoint-of ((some-request request))
   (endpoint-of (service-of some-request))  
-  )
-
-(defmethod endpoint-of ((some-request s3-request))
-  (if (bucket-for some-request)
-      (format-string "~a.~a"
-                     (bucket-for some-request)
-                     (call-next-method) 
-                     )
-      (call-next-method)
-      )  
-  )
-
-(defmethod endpoint-of ((some-request ec2-request))
-  (if (region-for some-request)
-      (region-for some-request)
-      (call-next-method)
-      )  
   )
 
 (defgeneric http-host-header (some-request)
@@ -474,39 +366,7 @@
   )
 
 (defgeneric canonical-query-string (some-request)
-  (:method ((some-request db-request))
-    ( let* ( 
-            (sorted-parameters (sorted-parameters some-request))
-            (joined-pairs (map-name-value-pairs 
-                           sorted-parameters
-                           (lambda (n v) 
-                             (with-output-to-string (os)
-                               (format os "~a=~a" n (url-encode v))
-                               )
-                             )
-                           )
-	      )
-            )
-      (detokenize joined-pairs "&")
-      )
-    )
-  (:method ((some-request sqs-request))
-    ( let* ( 
-            (sorted-parameters (sorted-parameters some-request))
-            (joined-pairs (map-name-value-pairs 
-                           sorted-parameters
-                           (lambda (n v) 
-                             (with-output-to-string (os)
-                               (format os "~a=~a" n (url-encode v))
-                               )
-                             )
-                           )
-	      )
-            )
-      (detokenize joined-pairs "&")
-      )
-    )
-  (:method ((some-request ec2-request))
+  (:method ((some-request request))
     ( let* ( 
             (sorted-parameters (sorted-parameters some-request))
             (joined-pairs (map-name-value-pairs 
@@ -542,33 +402,6 @@
     )
   )
 
-(defgeneric content-md5-of (some-request)
-  (:method ((some-request s3-request))
-    (if (object-content-for some-request)
-        (md5-digest (object-content-for some-request))
-        (string "")
-        )
-    )
-  )
-
-(defgeneric content-type-of (some-request)
-  (:method ((some-request s3-request))
-    (if (object-content-for some-request)
-        (string "text/plain")
-        (string "")
-        )
-    )
-  )
-
-(defgeneric content-length-of (some-request)
-  (:method ((some-request s3-request))
-    (if (object-content-for some-request)
-        (length (object-content-for some-request))
-        0
-        )
-    )
-  )
-
 (defgeneric date-header-of (some-request)
   (:method ((some-request request))
     (gethash "Date" (headers-of some-request))
@@ -585,79 +418,12 @@
     ) 
   )
 
-(defgeneric canonicalized-amz-headers-of (some-request)
-  (:documentation
-    "Return a canonical string representation of amz headers
-    "
-    )
-  (:method ((some-request s3-request))
-    (with-output-to-string (os)
-      (dolist (header (sorted-headers some-request))
-        (if (string-starts-with (car header) "x-amz")
-            (format os "~a: ~a\n" (car header) (cdr header))
-            )
-        )
-      )
-    )
-  )
-
-(defgeneric canonicalized-resource-of (some-request)
-  (:method ((some-request s3-request))
-    (if (bucket-for some-request)
-        (if (bucket-object-for some-request)
-            (format-string "/~a/~a"
-                           (bucket-for some-request)
-                           (bucket-object-for some-request) 
-                           )
-            (format-string "/~a/" (bucket-for some-request))
-            )
-        "/"
-        )
-    
-    )
-  )
-
 (defgeneric request-string-to-sign (some-request)
   (:documentation
    "String representation of request prepared for signing
     "
    )
-  (:method ((some-request db-request))
-    (format-string "~a~%~a~%~a~%~a"
-                   (http-verb some-request)
-                   (http-host-header some-request)
-                   (uri-of some-request)
-                   (canonical-query-string some-request)
-                   )
-    )
-  (:method ((some-request sqs-request))
-    (format-string "~a~%~a~%~a~%~a"
-                   (http-verb some-request)
-                   (http-host-header some-request)
-                   (uri-of some-request)
-                   (canonical-query-string some-request)
-                   )
-    )
-  (:method ((some-request s3-request))
-    (if (has-amz-headers-p some-request)
-        (format-string "~a~%~a~%~a~%~a~%~a~%~a"
-                       (http-verb some-request)
-                       (content-md5-of some-request)
-                       (content-type-of some-request)
-                       (date-header-of some-request)
-                       (canonicalized-amz-headers-of some-request)
-                       (canonicalized-resource-of some-request)
-                       )
-        (format-string "~a~%~a~%~a~%~a~%~a"
-                       (http-verb some-request)
-                       (content-md5-of some-request)
-                       (content-type-of some-request)
-                       (date-header-of some-request)
-                       (canonicalized-resource-of some-request)
-                       )
-        )
-    )
-  (:method ((some-request ec2-request))
+  (:method ((some-request request))
     (format-string "~a~%~a~%~a~%~a"
                    (http-verb some-request)
                    (http-host-header some-request)
@@ -701,21 +467,6 @@
   (:method ((some-request request))
     (sorted-parameters some-request)
     )
-  (:method ((some-request db-request))
-    (cons (cons "Signature" (request-signature some-request))
-          (sorted-parameters some-request)
-          )
-    )
-  (:method ((some-request sqs-request))
-    (cons (cons "Signature" (request-signature some-request))
-          (sorted-parameters some-request)
-          )
-    )
-  (:method ((some-request ec2-request))
-    (cons (cons "Signature" (request-signature some-request))
-          (sorted-parameters some-request)
-          )
-    )
   )
 
 (defgeneric additional-headers-of (some-request)
@@ -726,31 +477,6 @@
     )
   (:method ((some-request request))
     nil
-    )
-  (:method ((some-request s3-request))
-    (let ( 
-          (authorization-header (cons "Authorization" 
-                                      (format-string "AWS ~a:~a"
-                                                     (access-key-id *credentials*)
-                                                     (request-signature some-request)
-                                                     )
-                                      )
-                                )
-          )
-      (if (object-content-for some-request)
-          (append (list
-                   authorization-header
-                   (cons "Content-MD5" 
-                         (content-md5-of some-request)
-                         )
-                   )
-                  (sorted-headers some-request)
-                  )
-          (cons authorization-header
-                (sorted-headers some-request)
-                )
-          )
-      )
     )
   )
 
@@ -851,28 +577,6 @@
               )
       )
     )
-  (:method ((some-request sqs-request))
-    (if (queue-for some-request)
-        (format-string "https://~a/~a"
-                       (endpoint-of some-request)
-                       (queue-for some-request)
-                       )
-        (format-string "https://~a"
-                       (endpoint-of some-request)
-                       )
-        )
-    )
-  (:method ((some-request s3-request))
-    (if (bucket-object-for some-request)
-        (format-string "https://~a/~a"
-                       (endpoint-of some-request)
-                       (bucket-object-for some-request)
-                       )
-        (format-string "https://~a"
-                       (endpoint-of some-request)
-                       )
-        )
-    )
   )
 
 (defgeneric send-http-request (some-request)
@@ -884,13 +588,6 @@
     (http-request (http-uri some-request)
                   :method (method-of some-request)
                   :parameters (signed-parameters-of some-request)
-                  )
-    )
-  (:method ((some-request s3-request))
-    (http-request (http-uri some-request)
-                  :method (method-of some-request)
-                  :parameters (signed-parameters-of some-request)
-                  :additional-headers (additional-headers-of some-request)
                   )
     )
   )
@@ -938,46 +635,7 @@
     ")
   (:method (
             (some-service service) 
-            (some-request db-request) 
-            some-response
-            ) 
-    (let ( 
-          (some-format (result-format some-request))
-          )
-      (if some-format
-          (find-responses (response-body some-response) 
-			  some-format
-			  )
-          (response-values some-response)
-          )
-      )
-    )
-  (:method (
-            (some-service service) 
-            (some-request sqs-request) 
-            some-response
-            ) 
-    (let ( 
-          (some-format (result-format some-request))
-          )
-      (if some-format
-          (find-responses (response-body some-response) 
-			  some-format
-			  )
-          (response-values some-response)
-          )
-      )
-    )
-  (:method (
-            (some-service service) 
-            (some-request s3-request) 
-            some-response
-            )
-    (bytes-to-string (response-body some-response))
-    )
-  (:method (
-            (some-service service) 
-            (some-request ec2-request) 
+            (some-request request) 
             some-response
             ) 
     (let ( 
@@ -1057,6 +715,23 @@
                       (slots nil) 
                       endpoint 
                       version
+		      ( (:request (request-class
+				    &key
+				    ((:slots request-slots) nil)
+				    ((:documentation request-documentation) "")
+				    ((:init init-method) nil)
+				    ((:query query-method) nil)
+				    ((:endpoint endpoint-method) nil)
+				    ((:uri uri-method) nil)
+				    ((:string string-method) nil)
+				    ((:digest digest-algorithm) nil)
+				    ((:signed-parameters signed-parameters-method) nil)
+				    ((:additional-headers additional-headers-method) nil)
+				    ((:send send-method) nil)
+				    ((:result result-method) nil)
+				    )
+				 )
+			)
                       )
   
   `(progn
@@ -1073,9 +748,75 @@
      (defmethod version-of ((a-service ,name))
        ,@version
        )
-     
-     )
-  
+
+     ,(when request-class
+	    `(defclass ,request-class (request)
+	       ,request-slots
+	       (:documentation ,request-documentation)
+	       )
+	    )
+
+     ,(when init-method
+	    `(defmethod initialize-instance :after ((some-request ,request-class) &key )
+	       ,init-method
+	       )
+	    )
+
+     ,(when query-method
+	    `(defmethod canonical-query-string ((some-request ,request-class))
+	       ,query-method
+	       )
+	    )
+
+     ,(when endpoint-method
+	    `(defmethod endpoint-of ((some-request ,request-class))
+	       ,endpoint-method
+	       )
+	    )
+
+     ,(when uri-method
+	    `(defmethod http-uri ((some-request ,request-class))
+	       ,uri-method
+	       )
+	    )
+
+     ,(when string-method
+	    `(defmethod request-string-to-sign ((some-request ,request-class))
+	       ,string-method
+	       )
+	    )
+
+     ,(when digest-algorithm
+	    `(defmethod signature-digest-algorithm ((some-request ,request-class))
+	       (quote ,digest-algorithm)
+	       )
+	    )
+
+     ,(when signed-parameters-method
+	    `(defmethod signed-parameters-of ((some-request ,request-class))
+	       ,signed-parameters-method
+	       )
+	    )
+
+     ,(when additional-headers-method
+	    `(defmethod additional-headers-of ((some-request ,request-class))
+	       ,additional-headers-method
+	       )
+	    )
+
+     ,(when send-method
+	    `(defmethod send-http-request ((some-request ,request-class))
+	       ,send-method
+	       )
+	    )
+
+     ,(when result-method
+	    `(defmethod extract-result (some-service (some-request ,request-class) some-response)
+	       ,result-method
+	       )
+	    )
+
+     )  
   )
 
 (defmacro defrequest (

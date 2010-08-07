@@ -6,7 +6,7 @@
   'ec2-list-regions
   'ec2-list-availability-zones
   'ec2-list-instances
-
+  'ec2-describe-security-groups
   )
  )
 
@@ -22,16 +22,51 @@
   :version ( 
             (string "2010-06-15") 
             )
+  :request (
+	    ec2-request
+	    :slots (
+		    (region
+		     :initform nil
+		     :initarg :region
+		     :accessor region-for
+		     )
+		    )
+	    :init (progn
+		    (add-parameter some-request "Action" (default-action some-request))
+		    (add-parameter some-request "AWSAccessKeyId" (access-key-id *credentials*))
+		    (add-parameter some-request "SignatureMethod" "HmacSHA256")
+		    (add-parameter some-request "SignatureVersion" "2")
+		    (add-parameter some-request "Version" (version-of (service-of some-request)))
+		    (add-parameter some-request "Timestamp" (aws-timestamp))
+		    )
+	    :endpoint (progn
+			(if (region-for some-request)
+			    (region-for some-request)
+			    (call-next-method)
+			    )  
+			)
+	    :signed-parameters (progn
+				 (cons (cons "Signature" (request-signature some-request))
+				       (sorted-parameters some-request)
+				       )
+				 )
+	    )
   )
 
- (defrequest ec2-list-regions
-  :documentation "List all regions"
-  :bases (ec2-request)
-  :service ec2
-  :action ( 
-           (string "DescribeRegions")
-           )
-  )
+(defrequest ec2-list-regions
+    :documentation "List all regions"
+    :bases (ec2-request)
+    :service ec2
+    :action ( 
+	     (string "DescribeRegions")
+	     )
+    :result-format (
+		    `(
+		      "regionName"
+		      "regionEndpoint"
+		      )
+		     )
+    )
 
 (defxmlparser ec2-instances-parser builder
   :enter (
@@ -120,22 +155,18 @@
 	   )
     )
 
-;; <amiLaunchIndex>0</amiLaunchIndex>
-;; <productCodes/>
-;; <instanceType>m1.small</instanceType>
-;; <launchTime>2010-07-13T13:25:38.000Z</launchTime>
-;; <placement>
-;;     <availabilityZone>us-east-1a</availabilityZone>
-;;     <groupName/>
-;; </placement>
-;; <kernelId>aki-754aa41c</kernelId>
-;; <monitoring>
-;;     <state>disabled</state>
-;; </monitoring>
-;; <privateIpAddress>10.241.22.16</privateIpAddress>
-;; <ipAddress>75.101.150.79</ipAddress>
-;; <architecture>i386</architecture>
-;; <rootDeviceType>instance-store</rootDeviceType>
-;; <blockDeviceMapping/>
-;; <virtualizationType>paravirtual</virtualizationType>
-
+(defrequest ec2-describe-security-groups
+    :documentation "List all security groups"
+    :bases (ec2-request)
+    :service ec2
+    :action ( 
+	     (string "DescribeSecurityGroups")
+	     )
+  :args (
+	 region-name
+	 )
+  :call (
+         (setf (region-for some-request) region-name)
+         (call-next-method)
+         )
+    )

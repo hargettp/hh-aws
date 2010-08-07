@@ -42,6 +42,40 @@
   :version ( 
             (string "2008-01-01") 
             )
+  :request (
+	    sqs-request
+	    :slots (
+		    (queue-name
+		     :initarg :queue
+		     :initform nil
+		     :accessor queue-for
+		     )
+		    )
+	    :init (progn
+		    (add-parameter some-request "Action" (default-action some-request))
+		    (add-parameter some-request "AWSAccessKeyId" (access-key-id *credentials*))
+		    (add-parameter some-request "SignatureMethod" "HmacSHA256")
+		    (add-parameter some-request "SignatureVersion" "2")
+		    (add-parameter some-request "Version" (version-of (service-of some-request)))
+		    (add-parameter some-request "Timestamp" (aws-timestamp))
+		    )
+	    :uri (progn
+		   (if (queue-for some-request)
+		       (format-string "https://~a/~a"
+				      (endpoint-of some-request)
+				      (queue-for some-request)
+				      )
+		       (format-string "https://~a"
+				      (endpoint-of some-request)
+				      )
+		       )
+		   )
+	    :signed-parameters (progn
+				 (cons (cons "Signature" (request-signature some-request))
+				       (sorted-parameters some-request)
+				       )
+				 )
+	    )
   )
 
 (defrequest sqs-create-queue
