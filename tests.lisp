@@ -208,8 +208,8 @@
   )
 
 (define-test ec2-basics-test
-    (assert-true (ec2-list-regions))
-  (assert-true (ec2-list-availability-zones))
+    (assert-true (ec2-describe-regions))
+  (assert-true (ec2-describe-availability-zones))
   )
 
 (run-tests)

@@ -3,10 +3,13 @@
 (export
  (list
 
-  'ec2-list-regions
-  'ec2-list-availability-zones
-  'ec2-list-instances
+  'ec2-describe-regions
+  'ec2-describe-availability-zones
+  'ec2-describe-instances
   'ec2-describe-security-groups
+  'ec2-authorize-security-group-ingress
+  'ec2-revoke-security-group-ingress
+
   )
  )
 
@@ -53,7 +56,7 @@
 	    )
   )
 
-(defrequest ec2-list-regions
+(defrequest ec2-describe-regions
     :documentation "List all regions"
     :bases (ec2-request)
     :service ec2
@@ -80,21 +83,12 @@
              )
          (call-next-method)
          )
-  ;; :exit (
-  ;;        (if (path-p '("Contents"))
-  ;;            (progn
-  ;;              (putend (current-of handler) (results-of handler) )
-  ;;              (setf (current-of handler) nil)
-  ;;              )
-  ;;            )
-  ;;        (call-next-method)
-  ;;        )
   :finish (
            (results-of handler)
            )
   )
 
-(defrequest ec2-list-availability-zones
+(defrequest ec2-describe-availability-zones
   :documentation "List all availability zones"
   :bases (ec2-request)
   :service ec2
@@ -112,7 +106,7 @@
 
   )
 
-(defrequest ec2-list-instances
+(defrequest ec2-describe-instances
   :documentation "List all regions"
   :bases (ec2-request)
   :service ec2
@@ -155,6 +149,73 @@
 	   )
     )
 
+(defclass security-group-builder (builder)
+  (
+   (current-ip-permission :initform nil :accessor current-permission-of)
+   )
+  )
+
+(defxmlparser security-groups-parser security-group-builder
+  :enter (
+          (push (symbol-name name) *current-elements*)
+	  (when (path-p '("item" "securityGroupInfo" "DescribeSecurityGroupsResponse"))
+	    (putend :group (current-of handler))
+	      )
+	  (when (path-p '("item" "ipPermissions" "item" "securityGroupInfo" "DescribeSecurityGroupsResponse"))
+	    (putend `(:permission) (current-permission-of handler))
+	      )
+          )
+  :text (
+	 ;; top-level security group info
+	 (if (path-p '("ownerId" "item" "securityGroupInfo" "DescribeSecurityGroupsResponse"))
+             (progn
+               (putend `(:owner ,text-string) (current-of handler) )
+               )
+             )
+         (if (path-p '("groupName" "item" "securityGroupInfo" "DescribeSecurityGroupsResponse"))
+             (progn
+               (putend `(:name ,text-string) (current-of handler) )
+               )
+             )
+	 (if (path-p '("groupDescription" "item" "securityGroupInfo" "DescribeSecurityGroupsResponse"))
+             (progn
+               (putend `(:description ,text-string) (current-of handler) )
+               )
+             )
+	 (when (path-p '("ipProtocol" "item" "ipPermissions" "item" "securityGroupInfo" "DescribeSecurityGroupsResponse"))
+	   (putend `(:ip-protocol , text-string) (current-permission-of handler) )
+	   )
+	 (when (path-p '("fromPort" "item" "ipPermissions" "item" "securityGroupInfo" "DescribeSecurityGroupsResponse"))
+	   (putend `(:from-port , text-string) (current-permission-of handler) )
+	   )
+	 (when (path-p '("toPort" "item" "ipPermissions" "item" "securityGroupInfo" "DescribeSecurityGroupsResponse"))
+	   (putend `(:to-port , text-string) (current-permission-of handler) )
+	   )
+	 (when (path-p '("groups" "item" "ipPermissions" "item" "securityGroupInfo" "DescribeSecurityGroupsResponse"))
+	   (putend `(:groups , text-string) (current-permission-of handler) )
+	   )
+	 ;; ip range info
+	 (when (path-p '("cidrIp" "item" "ipRanges" "item" "ipPermissions" "item" "securityGroupInfo" "DescribeSecurityGroupsResponse"))
+	   (putend `(:ip-range , text-string) (current-permission-of handler) )
+	   )
+         (call-next-method)
+         )
+  :exit (
+	 (when (path-p '("item" "ipRanges" "item" "ipPermissions" "item" "securityGroupInfo" "DescribeSecurityGroupsResponse"))
+	   (putend `(:ip-range ,(current-permission-of handler)) (current-of handler) )
+	   (setf (current-permission-of handler) nil)
+	   )
+	 (when (path-p '("item" "securityGroupInfo" "DescribeSecurityGroupsResponse"))
+	   (putend (current-of handler) (results-of handler))
+	   (setf (current-of handler) nil)
+	   )
+	 (pop *current-elements*)
+	 )
+  :finish (
+           (results-of handler)
+           )
+  )
+
 (defrequest ec2-describe-security-groups
     :documentation "List all security groups"
     :bases (ec2-request)
@@ -169,4 +230,44 @@
          (setf (region-for some-request) region-name)
          (call-next-method)
          )
+  :result (
+	   ;; (values 
+	    (with-input-from-string (is (response-body some-response))
+	      (security-groups-parser is)
+	      )
+	    ;; (call-next-method)	   
+	    ;; )
+	   )
+    )
+
+(defrequest ec2-authorize-security-group-ingress
+    :documentation""
+    :bases (ec2-request)
+    :service ec2
+    :action (
+	     (string "AuthorizeSecurityGroupIngress")
+	     )
+    :parameters (
+		 ("GroupName" . groupName)
+		 ("IpPermissions.1.IpProtocol" . protocol)
+		 ("IpPermissions.1.FromPort" . from-port)
+		 ("IpPermissions.1.ToPort" . to-port)
+		 ("IpPermissions.1.IpRanges.1.CidrIp" . cidr-ip)
+		 )
+    )
+
+(defrequest ec2-revoke-security-group-ingress
+    :documentation""
+    :bases (ec2-request)
+    :service ec2
+    :action (
+	     (string "RevokeSecurityGroupIngress")
+	     )
+    :parameters (
+		 ("GroupName" . groupName)
+		 ("IpProtocol" . protocol)
+		 ("FromPort" . from-port)
+		 ("ToPort" . to-port)
+		 ("CidrIp" . cidr-ip)
+		 )
     )
