@@ -1,0 +1,10 @@
+syntax: glob
+
+\.DS_Store
+Icon?
+*.hgbundle
+*.fasl
+*.pyc
+_darcs
+.dvc
+
