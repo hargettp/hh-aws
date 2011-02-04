@@ -20,19 +20,6 @@
 
 (in-package :hh-aws)
 
-(export
- (list
-
-  'ec2-describe-regions
-  'ec2-describe-availability-zones
-  'ec2-describe-instances
-  'ec2-describe-security-groups
-  'ec2-authorize-security-group-ingress
-  'ec2-revoke-security-group-ingress
-
-  )
- )
-
 (defservice ec2
   :endpoint ( 
 	     ;; TODO hmm, ec2 has multiple, region-specific endpoints

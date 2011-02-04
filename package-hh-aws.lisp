@@ -24,15 +24,58 @@
 (in-package :hh-aws-asd)
 
 (defpackage :hh-aws
-  (:nicknames :aws )
+  (:nicknames :aws)
   (:use :cl
-    :drakma
-    :cl-base64 
-    )
+	:drakma
+	:cl-base64)
   (:export
-    
-    ;; Exported symbols go here
-    
-    )
-  )
+   
+   ;; Elastic Compute Cloud (EC2)
+
+   #:ec2-describe-regions
+   #:ec2-describe-availability-zones
+   #:ec2-describe-instances
+   #:ec2-describe-security-groups
+   #:ec2-authorize-security-group-ingress
+   #:ec2-revoke-security-group-ingress
+   
+
+   ;; Simple Storage Service (S3)
+
+   #:s3-list-buckets
+   #:s3-create-bucket
+   #:s3-delete-bucket
+   
+   #:s3-list-bucket-objects
+   #:s3-put-bucket-object
+   #:s3-get-bucket-object
+   #:s3-delete-bucket-object
+
+   ;; SimpleDB
+
+   #:db-list-domains
+   #:db-create-domain
+   #:db-delete-domain
+   #:db-domain-metadata
+   
+   #:db-put-attributes
+   #:db-get-attributes
+   #:db-delete-attributes
+   
+   #:db-query
+   #:db-query-with-attributes
+   #:db-select
+
+   ;; Simple Queue Service
+
+   #:sqs-create-queue
+   #:sqs-list-queues
+   #:sqs-delete-queue
+   #:sqs-send-message
+   #:sqs-receive-message
+   #:sqs-delete-message
+   #:sqs-get-queue-attributes
+   #:sqs-set-queue-attributes
+
+   ))
 

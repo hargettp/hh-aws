@@ -20,21 +20,6 @@
 
 (in-package :hh-aws)
 
-(export
- (list
-
-  's3-list-buckets
-  's3-create-bucket
-  's3-delete-bucket
-   
-  's3-list-bucket-objects
-  's3-put-bucket-object
-  's3-get-bucket-object
-  's3-delete-bucket-object
-  
-  )
- )
-
 (defgeneric content-md5-of (some-request)
   )
 

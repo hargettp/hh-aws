@@ -20,25 +20,6 @@
 
 (in-package :hh-aws)
 
-(export
- (list
-  
-  'db-list-domains
-  'db-create-domain
-  'db-delete-domain
-  'db-domain-metadata
-  
-  'db-put-attributes
-  'db-get-attributes
-  'db-delete-attributes
-  
-  'db-query
-  'db-query-with-attributes
-  'db-select
-  
-  )
- )
-
 (defgeneric add-attribute-parameters (some-request attributes)
   (:documentation 
     "Add the indicated parameters as attribute name / value

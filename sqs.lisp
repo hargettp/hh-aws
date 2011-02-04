@@ -20,21 +20,6 @@
 
 (in-package :hh-aws)
 
-(export
- (list
-  
-  'sqs-create-queue
-  'sqs-list-queues
-  'sqs-delete-queue
-  'sqs-send-message
-  'sqs-receive-message
-  'sqs-delete-message
-  'sqs-get-queue-attributes
-  'sqs-set-queue-attributes
-  
-  )
- )
-
 (defservice simple-queue-service
   :endpoint ( 
              (string "queue.amazonaws.com") 
