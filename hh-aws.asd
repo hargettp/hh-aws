@@ -27,11 +27,11 @@
   :name "hh-aws"
   :version "0.01"
   :components (
-               (:file "package-hh-aws")
-	       (:file "utils" :depends-on ("package-hh-aws"))
-               (:file "constants" :depends-on ("package-hh-aws" "utils"))
-               (:file "conditions" :depends-on ("package-hh-aws" "utils"))
-               (:file "xml" :depends-on ("package-hh-aws" "utils"))
+               (:file "package")
+	       (:file "utils" :depends-on ("package"))
+               (:file "constants" :depends-on ("package" "utils"))
+               (:file "conditions" :depends-on ("package" "utils"))
+               (:file "xml" :depends-on ("package" "utils"))
                (:file "common" :depends-on ("constants" "conditions" "xml"))
                (:file "sdb" :depends-on ("common"))
                (:file "s3" :depends-on ("common"))
