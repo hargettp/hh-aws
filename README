@@ -1,0 +1,18 @@
+hh-aws
+
+This package is a Common Lisp library for acessing the APIs of Amazon Web Services.  Current services supported are:
+
+* Simple Storage Service (S3)
+* SimpleDB (SDB)
+* Elastic Compute Cloud (EC2)
+* Simple Queue Service (SQS)
+
+All code in this package is licensed under the MIT License.
+
+When possible, the library uses the REST versions of AWS APIs, rather than SOAP.  Also, unfortunately, the library
+is still using older versions of some Amazon services, and are in need of update to newer versions of Amazon APIs.
+
+Contact phil@haphazardhouse.net for any questions, comments, feedback, or contributions, and keep an eye on
+http://haphazardhouse.net/projects/hh-aws for info and news about this library.
+
+Thanks!
