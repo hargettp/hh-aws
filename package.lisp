@@ -29,7 +29,12 @@
 	:drakma
 	:cl-base64)
   (:export
-   
+  
+   ;; Common
+   #:*credentials*
+   #:access-key-id
+   #:secret-key
+
    ;; Elastic Compute Cloud (EC2)
 
    #:ec2-describe-regions
