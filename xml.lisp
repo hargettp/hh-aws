@@ -69,7 +69,7 @@
                         ((:enter enter-method) nil) 
                         ((:text text-method) nil) 
                         ((:exit exit-method) nil)
-                        ((:finish finish-method nil))
+                        ((:finish finish-method) nil)
                         )
   (declare (ignorable name))
   `(progn
